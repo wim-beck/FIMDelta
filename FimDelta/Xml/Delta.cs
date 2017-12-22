@@ -3,7 +3,6 @@ using System.Xml.Linq;
 
 namespace FimDelta.Xml
 {
-
 	public class Delta
 	{
 		private XDocument xmlDocument;
