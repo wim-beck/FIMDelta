@@ -75,13 +75,8 @@
     <Compile Include="ViewModel\ReferencedByNode.cs" />
     <Compile Include="Xml\Delta.cs" />
     <Compile Include="Xml\DeltaState.cs" />
-    <Compile Include="Xml\Export.cs" />
-    <Compile Include="Xml\ExportObject.cs" />
     <Compile Include="Xml\ImportChange.cs" />
     <Compile Include="Xml\ImportObject.cs" />
-    <Compile Include="Xml\JoinPair.cs" />
-    <Compile Include="Xml\ResourceManagementAttribute.cs" />
-    <Compile Include="Xml\ResourceManagementObject.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -90,7 +85,6 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="DeltaParser.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>

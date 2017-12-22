@@ -1,24 +1,48 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Xml.Serialization;
-using System.Collections;
+﻿using System.Linq;
+using System.Xml.Linq;
 
 namespace FimDelta.Xml
 {
 
-    [XmlRoot("Results")]
-    public class Delta
-    {
-        [XmlElement("ImportObject")]
-        public ImportObject[] Objects { get; set; }
+	public class Delta
+	{
+		private XDocument xmlDocument;
+		public ImportObject[] Objects { get; set; }
 
-        [XmlIgnore]
-        public Export Source { get; set; }
+		/// <summary>
+		/// Default constructor
+		/// </summary>
+		public Delta() { }
 
-        [XmlIgnore]
-        public Export Target { get; set; }
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="deltaFile"></param>
+		public Delta(string deltaFile)
+		{
+			xmlDocument = XDocument.Load(deltaFile);
+			Objects = xmlDocument.Root.Element("Operations").Elements("ResourceOperation").Select(x => new ImportObject(x)).ToArray();
+		}
 
-    }
+		/// <summary>
+		/// Save the delta.
+		/// </summary>
+		/// <param name="outFile"></param>
+		public void Save(string outFile)
+		{
+			foreach (ImportObject obj in Objects)
+			{
+				if (!obj.NeedsInclude())
+				{
+					obj.XmlRepresentation.Remove();
+				}
+				else
+				{
+					obj.Clean();
+				}
+			}
+			xmlDocument.Save(outFile);
+		}
+
+	}
 }

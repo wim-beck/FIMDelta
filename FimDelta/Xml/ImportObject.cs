@@ -1,60 +1,100 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.ComponentModel;
+using System.Linq;
+using System.Xml.Linq;
 using System.Xml.Serialization;
 
 namespace FimDelta.Xml
 {
+	[Serializable]
+	public class ImportObject : INotifyPropertyChanged
+	{
+		public string Id { get; private set; }
 
-    [Serializable]
-    public class ImportObject : INotifyPropertyChanged
-    {
-        [XmlElement]
-        public string SourceObjectIdentifier { get; set; }
+		public string ObjectType { get; set; }
 
-        [XmlElement]
-        public string TargetObjectIdentifier { get; set; }
+		public DeltaState State { get; set; }
 
-        [XmlElement]
-        public string ObjectType { get; set; }
+		public ImportChange[] Changes { get; set; }
 
-        [XmlElement]
-        public DeltaState State { get; set; }
+		public XElement XmlRepresentation { get; private set; }
 
-        [XmlArray("Changes"), XmlArrayItem("ImportChange")]
-        public ImportChange[] Changes { get; set; }
+		private bool isIncluded = true;
 
-        [XmlArray("AnchorPairs"), XmlArrayItem("JoinPair")]
-        public JoinPair[] AnchorPairs { get; set; }
+		[XmlIgnore]
+		public bool IsIncluded
+		{
+			get { return isIncluded; }
+			set
+			{
+				isIncluded = value;
+				OnPropertyChanged("IsIncluded");
+			}
+		}
 
-        private bool isIncluded = true;
+		internal bool NeedsInclude()
+		{
+			return IsIncluded || (Changes != null && Changes.Any(x => x.IsIncluded));
+		}
 
-        [XmlIgnore]
-        public bool IsIncluded 
-        {
-            get { return isIncluded; }
-            set 
-            {
-                isIncluded = value;
-                OnPropertyChanged("IsIncluded");
-            }
-        }
+		public event PropertyChangedEventHandler PropertyChanged;
 
-        internal bool NeedsInclude()
-        {
-            return IsIncluded || (Changes != null && Changes.Any(x => x.IsIncluded));
-        }
+		/// <summary>
+		/// Default constructor.
+		/// </summary>
+		public ImportObject() { }
 
-        protected void OnPropertyChanged(string property)
-        {
-            var e = PropertyChanged;
-            if (e != null)
-                e(this, new PropertyChangedEventArgs(property));
-        }
+		/// <summary>
+		/// Constructor
+		/// </summary>
+		/// <param name="obj"></param>
+		public ImportObject(XElement obj)
+		{
+			XmlRepresentation = obj;
+			Id = obj.Attribute("id").Value;
+			ObjectType = obj.Attribute("resourceType").Value;
+			Changes = obj.Element("AttributeOperations").Elements("AttributeOperation").Select(x => new ImportChange(x)).ToArray();
+			State = getState(obj.Attribute("operation").Value);
+		}
 
-        public event PropertyChangedEventHandler PropertyChanged;
-    }
+		private DeltaState getState(string input)
+		{
+			if (input.Equals("Add"))
+			{
+				return DeltaState.Add;
+			}
+			else if (input.Equals("Delete"))
+			{
+				return DeltaState.Delete;
+			}
+			else if (input.Equals("Update"))
+			{
+				return DeltaState.Update;
+			}
+			throw new Exception("Invalid delta state");
+		}
 
+		/// <summary>
+		/// Event listener.
+		/// </summary>
+		/// <param name="property"></param>
+		protected void OnPropertyChanged(string property)
+		{
+			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(property));
+		}
+
+		/// <summary>
+		/// Remove deselected properties from xml element.
+		/// </summary>
+		public void Clean()
+		{
+			foreach (ImportChange change in Changes)
+			{
+				if (!change.IsIncluded)
+				{
+					change.XmlRepresentation.Remove();
+				}
+			}
+		}
+	}
 }

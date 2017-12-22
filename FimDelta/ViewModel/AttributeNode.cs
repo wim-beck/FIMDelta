@@ -1,188 +1,193 @@
-﻿using System;
+﻿using FimDelta.Xml;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using FimDelta.Xml;
 using System.ComponentModel;
+using System.Linq;
 
 namespace FimDelta.ViewModel
 {
 
-    /// <summary>
-    /// Represents an single attribute of an object
-    /// </summary>
-    public class AttributeNode : IIncludableNode, INotifyPropertyChanged, IDisposable
-    {
-        private readonly Delta delta;
-        private readonly ImportObject obj;
-        private readonly ImportChange attr;
-        private ObjectNode[] children = null;
-        private WeakReference parent = null;
+	/// <summary>
+	/// Represents an single attribute of an object
+	/// </summary>
+	public class AttributeNode : IIncludableNode, INotifyPropertyChanged, IDisposable
+	{
+		private readonly Delta delta;
+		private readonly ImportObject obj;
+		private readonly ImportChange attr;
+		private ObjectNode[] children = null;
+		private WeakReference parent = null;
 
-        public AttributeNode(Delta delta, ImportObject obj, ImportChange attr)
-        {
-            this.delta = delta;
-            this.obj = obj;
-            this.attr = attr;
+		public event PropertyChangedEventHandler PropertyChanged;
 
-            this.attr.PropertyChanged += SourcePropertyChanged;
-        }
+		/// <summary>
+		/// Constructor.
+		/// </summary>
+		/// <param name="delta"></param>
+		/// <param name="obj"></param>
+		/// <param name="attr"></param>
+		public AttributeNode(Delta delta, ImportObject obj, ImportChange attr)
+		{
+			this.delta = delta;
+			this.obj = obj;
+			this.attr = attr;
 
-        ~AttributeNode()
-        {
-            Dispose(false);
-        }
+			this.attr.PropertyChanged += SourcePropertyChanged;
+		}
 
-        public void Dispose()
-        {
-            Dispose(true);
-        }
+		/// <summary>
+		/// Destructor.
+		/// </summary>
+		~AttributeNode()
+		{
+			Dispose(false);
+		}
 
-        protected void Dispose(bool disposing)
-        {
-            this.attr.PropertyChanged -= SourcePropertyChanged;
-            if (disposing)
-                GC.SuppressFinalize(this);
-        }
+		public void Dispose()
+		{
+			Dispose(true);
+		}
 
-        private void SourcePropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == "IsIncluded")
-                UpdateInclude();
-        }
+		protected void Dispose(bool disposing)
+		{
+			attr.PropertyChanged -= SourcePropertyChanged;
+			if (disposing)
+				GC.SuppressFinalize(this);
+		}
 
-        public ObjectNode Parent
-        {
-            get { return parent != null && parent.IsAlive ? (ObjectNode)parent.Target : null; }
-            set { parent = new WeakReference(value); }
-        }
+		private void SourcePropertyChanged(object sender, PropertyChangedEventArgs e)
+		{
+			if (e.PropertyName == "IsIncluded")
+				UpdateInclude();
+		}
 
-        public string OperationName
-        {
-            get
-            {
-                if (attr.Operation == "None")
-                    return "Set";
-                else
-                    return attr.Operation;
-            }
-        }
+		public ObjectNode Parent
+		{
+			get { return parent != null && parent.IsAlive ? (ObjectNode)parent.Target : null; }
+			set { parent = new WeakReference(value); }
+		}
 
-        public string AttributeName
-        {
-            get { return attr.AttributeName; }
-        }
+		public string OperationName
+		{
+			get
+			{
+				if (attr.Operation == "None")
+					return "Set";
+				else
+					return attr.Operation;
+			}
+		}
 
-        public string AttributeValue
-        {
-            get { return attr.AttributeValue; }
-        }
+		public string AttributeName
+		{
+			get { return attr.AttributeName; }
+		}
 
-        public string DisplayTooltip
-        {
-            get
-            {
-                return DisplayValue == attr.AttributeValue ? null : attr.AttributeValue;
-            }
-        }
+		public string AttributeValue
+		{
+			get { return attr.AttributeValue; }
+		}
 
-        public string DisplayValue
-        {
-            get
-            {
-                if (string.IsNullOrEmpty(attr.AttributeValue))
-                {
-                    if (attr.Operation == "None" || attr.Operation == "Set")
-                        return "(empty)";
-                    else
-                        return attr.AttributeValue;
-                }
+		public string DisplayTooltip
+		{
+			get
+			{
+				return DisplayValue == attr.AttributeValue ? null : attr.AttributeValue;
+			}
+		}
 
-                string s = attr.AttributeValue.Replace("\r\n", "\\n").Replace("\n", "\\n").Replace("\r", "");
+		public string DisplayValue
+		{
+			get
+			{
+				if (attr.IsReference)
+				{
+					return attr.ReferenceValue;
+				}
+				if (string.IsNullOrEmpty(attr.AttributeValue))
+				{
+					if (attr.Operation == "None" || attr.Operation == "Set")
+						return "(empty)";
+					else
+						return attr.AttributeValue;
+				}
 
-                if (s.Length > 150)
-                {
-                    s = s.Substring(0, 146) + " ...";
-                }
+				string s = attr.AttributeValue.Replace("\r\n", "\\n").Replace("\n", "\\n").Replace("\r", "");
 
-                return s;
-            }
-        }
+				if (s.Length > 150)
+				{
+					s = s.Substring(0, 146) + " ...";
+				}
 
-        public IEnumerable<INode> ChildNodes
-        {
-            get 
-            {
-                if (string.IsNullOrEmpty(attr.AttributeValue)) return null;
+				return s;
+			}
+		}
 
-                if (children == null)
-                {
-                    children = delta.Objects
-                        .Where(x => (x.SourceObjectIdentifier != null &&
-                                     x.SourceObjectIdentifier.StartsWith("urn:uuid:") &&
-                                     attr.AttributeValue.IndexOf(x.SourceObjectIdentifier.Substring(9), StringComparison.OrdinalIgnoreCase) >= 0) ||
-                                    (x.TargetObjectIdentifier != null &&
-                                     x.TargetObjectIdentifier.StartsWith("urn:uuid:") &&
-                                     attr.AttributeValue.IndexOf(x.TargetObjectIdentifier.Substring(9), StringComparison.OrdinalIgnoreCase) >= 0))
-                        .Select(x => new ObjectNode(delta, x))
-                        .ToArray();
-                }
+		public IEnumerable<INode> ChildNodes
+		{
+			get
+			{
+				if (string.IsNullOrEmpty(attr.AttributeValue)) return null;
 
-                return children;
-            }
-        }
+				if (children == null)
+				{
+					children = delta.Objects
+							 .Where(x => attr.AttributeValue.Equals(x.Id, StringComparison.OrdinalIgnoreCase))
+							 .Select(x => new ObjectNode(delta, x))
+							 .ToArray();
+				}
 
-        private bool inIncludeLoop = false;
+				return children;
+			}
+		}
 
-        public bool? Include
-        {
-            get
-            {
-                if (!obj.IsIncluded)
-                    return false;
-                return attr.IsIncluded;
-            }
-            set
-            {
-                inIncludeLoop = true;
+		private bool inIncludeLoop = false;
 
-                try
-                {
-                    attr.IsIncluded = value.GetValueOrDefault();
-                    if (attr.IsIncluded)
-                        obj.IsIncluded = true;
+		public bool? Include
+		{
+			get
+			{
+				if (!obj.IsIncluded)
+					return false;
+				return attr.IsIncluded;
+			}
+			set
+			{
+				inIncludeLoop = true;
 
-                    if (children != null)
-                        foreach (var ch in children)
-                            ch.UpdateInclude();
-                }
-                finally
-                {
-                    inIncludeLoop = false;
-                }
+				try
+				{
+					attr.IsIncluded = value.GetValueOrDefault();
+					if (attr.IsIncluded)
+						obj.IsIncluded = true;
 
-                UpdateInclude();
-            }
-        }
+					if (children != null)
+						foreach (var ch in children)
+							ch.UpdateInclude();
+				}
+				finally
+				{
+					inIncludeLoop = false;
+				}
 
-        public void UpdateInclude()
-        {
-            if (inIncludeLoop) return;
+				UpdateInclude();
+			}
+		}
 
-            OnPropertyChanged("Include");
+		public void UpdateInclude()
+		{
+			if (inIncludeLoop) return;
 
-            if (Parent != null)
-                Parent.UpdateInclude();
-        }
+			OnPropertyChanged("Include");
 
-        protected void OnPropertyChanged(string property)
-        {
-            var e = PropertyChanged;
-            if (e != null)
-                e(this, new PropertyChangedEventArgs(property));
-        }
+			if (Parent != null)
+				Parent.UpdateInclude();
+		}
 
-        public event PropertyChangedEventHandler PropertyChanged;
+		protected void OnPropertyChanged(string property)
+		{
+			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(property));
+		}
 
-    }
+	}
 }
