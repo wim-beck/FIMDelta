@@ -15,7 +15,6 @@ namespace FimDelta.ViewModel
 		private readonly ImportObject obj;
 		private readonly AttributeNode[] children;
 		private WeakReference parent = null;
-		private string displayName = null;
 
 		public event PropertyChangedEventHandler PropertyChanged;
 
@@ -32,24 +31,14 @@ namespace FimDelta.ViewModel
 
 		public string ObjectType
 		{
-			get { return obj.ObjectType; }
+			get { return obj.ResourceType; }
 		}
 
 		public string DisplayName
 		{
 			get
 			{
-				if (displayName != null)
-					return displayName;
-
-				if (obj.Changes != null)
-				{
-					var c = obj.Changes.FirstOrDefault(x => x.AttributeName == "DisplayName");
-					if (c != null)
-						return displayName = c.AttributeValue;
-				}
-
-				throw new Exception("Display name not found");
+				return obj.ResourceName;
 			}
 		}
 
@@ -97,7 +86,6 @@ namespace FimDelta.ViewModel
 			set
 			{
 				inIncludeLoop = true;
-
 				try
 				{
 					obj.IsIncluded = value.GetValueOrDefault();
@@ -113,7 +101,6 @@ namespace FimDelta.ViewModel
 				{
 					inIncludeLoop = false;
 				}
-
 				UpdateInclude();
 			}
 		}
@@ -173,6 +160,5 @@ namespace FimDelta.ViewModel
 		{
 			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(property));
 		}
-
 	}
 }

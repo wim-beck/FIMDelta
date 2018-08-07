@@ -1,5 +1,5 @@
-﻿using FimDelta.Properties;
-using FimDelta.Xml;
+﻿using FimDelta.Xml;
+using Microsoft.Win32;
 using System;
 using System.Windows;
 using System.Windows.Controls;
@@ -14,7 +14,7 @@ namespace FimDelta
 	{
 		private readonly CollectionViewSource view;
 		private Delta delta;
-		private DeltaViewController deltaVC;
+		private DeltaViewController deltaViewController;
 
 		public MainWindow()
 		{
@@ -29,10 +29,30 @@ namespace FimDelta
 		{
 			try
 			{
-				delta = new Delta(Settings.Default.DeltaFile);
-
-				deltaVC = new DeltaViewController(delta);
-				view.Source = deltaVC.View;
+				if (Environment.GetCommandLineArgs().Length > 1)
+				{
+					delta = new Delta(Environment.GetCommandLineArgs()[1]);
+					deltaViewController = new DeltaViewController(delta);
+					view.Source = deltaViewController.View;
+				}
+				else
+				{
+					OpenFileDialog fileDialog = new OpenFileDialog();
+					fileDialog.Title = "Provide a changes.xml file";
+					fileDialog.Filter = "XML files|*.xml";
+					bool? fileChosen = fileDialog.ShowDialog();
+					if (fileChosen.Value)
+					{
+						delta = new Delta(fileDialog.FileName);
+						deltaViewController = new DeltaViewController(delta);
+						view.Source = deltaViewController.View;
+					}
+					else
+					{
+						MessageBox.Show("Provide a delta file as argument.", "Warning");
+						Application.Current.Shutdown();
+					}
+				}
 			}
 			catch (Exception ex)
 			{
@@ -43,23 +63,29 @@ namespace FimDelta
 
 		private void sortBy_SelectionChanged(object sender, SelectionChangedEventArgs e)
 		{
-			if (view == null || deltaVC == null) return;
+			if (view == null || deltaViewController == null) return;
 
 			int sortType = ((ComboBox)sender).SelectedIndex;
 
 			if (sortType == 1)
-				deltaVC.Grouping = GroupType.State;
+				deltaViewController.Grouping = GroupType.State;
 			else if (sortType == 2)
-				deltaVC.Grouping = GroupType.ObjectType;
+				deltaViewController.Grouping = GroupType.ObjectType;
 			else
-				deltaVC.Grouping = GroupType.None;
+				deltaViewController.Grouping = GroupType.None;
 
-			view.Source = deltaVC.View;
+			view.Source = deltaViewController.View;
 		}
 
 		private void Button_Click(object sender, RoutedEventArgs e)
 		{
-			delta?.Save(Settings.Default.SaveTo);
+			string outFile = Environment.GetCommandLineArgs()[1].Replace(".xml", "2.xml");
+			if (Environment.GetCommandLineArgs().Length > 2)
+			{
+				outFile = Environment.GetCommandLineArgs()[2];
+			}
+			delta.Save(outFile);
+			MessageBox.Show("Delta saved to " + outFile);
 		}
 	}
 }

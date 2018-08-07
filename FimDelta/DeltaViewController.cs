@@ -48,7 +48,7 @@ namespace FimDelta
 							view = delta.Objects.GroupBy(x => x.State).Select(x => new GroupByNode(x.Key.ToString(), x.Select(t => new ObjectNode(delta, t)).OrderBy(t => t.DisplayName).ToArray()));
 							break;
 						case GroupType.ObjectType:
-							view = delta.Objects.GroupBy(x => x.ObjectType).Select(x => new GroupByNode(x.Key, x.Select(t => new ObjectNode(delta, t)).OrderBy(t => t.DisplayName).ToArray()));
+							view = delta.Objects.GroupBy(x => x.ResourceType).Select(x => new GroupByNode(x.Key, x.Select(t => new ObjectNode(delta, t)).OrderBy(t => t.DisplayName).ToArray()));
 							break;
 					}
 				}

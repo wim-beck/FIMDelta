@@ -42,6 +42,5 @@ namespace FimDelta.Xml
 			}
 			xmlDocument.Save(outFile);
 		}
-
 	}
 }

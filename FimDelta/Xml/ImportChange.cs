@@ -69,7 +69,7 @@ namespace FimDelta.Xml
 					ReferenceType = "ref";
 					IsReference = true;
 					FullyResolved = false;
-					ReferenceValue = AttributeValue.Split('#')[1];
+					ReferenceValue = AttributeValue.Split('|')[2];
 				}
 			}
 		}

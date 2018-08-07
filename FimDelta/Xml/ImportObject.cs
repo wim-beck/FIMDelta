@@ -11,7 +11,9 @@ namespace FimDelta.Xml
 	{
 		public string Id { get; private set; }
 
-		public string ObjectType { get; set; }
+		public string ResourceType { get; private set; }
+		
+		public string ResourceName { get; private set; }
 
 		public DeltaState State { get; set; }
 
@@ -52,7 +54,8 @@ namespace FimDelta.Xml
 		{
 			XmlRepresentation = obj;
 			Id = obj.Attribute("id").Value;
-			ObjectType = obj.Attribute("resourceType").Value;
+			ResourceType = obj.Attribute("resourceType").Value;
+			ResourceName = obj.Attribute("resourceName").Value;
 			Changes = obj.Element("AttributeOperations").Elements("AttributeOperation").Select(x => new ImportChange(x)).ToArray();
 			State = getState(obj.Attribute("operation").Value);
 		}

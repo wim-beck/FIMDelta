@@ -9,5 +9,4 @@
 		Update,
 		Delete
 	}
-
 }
