@@ -15,7 +15,11 @@ namespace FimDelta
 		private readonly CollectionViewSource view;
 		private Delta delta;
 		private DeltaViewController deltaViewController;
+		private string changesFile;
 
+		/// <summary>
+		/// 
+		/// </summary>
 		public MainWindow()
 		{
 			InitializeComponent();
@@ -25,15 +29,18 @@ namespace FimDelta
 			Loaded += new RoutedEventHandler(MainWindow_Loaded);
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
 		void MainWindow_Loaded(object sender, RoutedEventArgs e)
 		{
 			try
 			{
 				if (Environment.GetCommandLineArgs().Length > 1)
 				{
-					delta = new Delta(Environment.GetCommandLineArgs()[1]);
-					deltaViewController = new DeltaViewController(delta);
-					view.Source = deltaViewController.View;
+					changesFile = Environment.GetCommandLineArgs()[1];
 				}
 				else
 				{
@@ -43,9 +50,7 @@ namespace FimDelta
 					bool? fileChosen = fileDialog.ShowDialog();
 					if (fileChosen.Value)
 					{
-						delta = new Delta(fileDialog.FileName);
-						deltaViewController = new DeltaViewController(delta);
-						view.Source = deltaViewController.View;
+						changesFile = fileDialog.FileName;
 					}
 					else
 					{
@@ -53,6 +58,9 @@ namespace FimDelta
 						Application.Current.Shutdown();
 					}
 				}
+				delta = new Delta(changesFile);
+				deltaViewController = new DeltaViewController(delta);
+				view.Source = deltaViewController.View;
 			}
 			catch (Exception ex)
 			{
@@ -61,6 +69,11 @@ namespace FimDelta
 			}
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
 		private void sortBy_SelectionChanged(object sender, SelectionChangedEventArgs e)
 		{
 			if (view == null || deltaViewController == null) return;
@@ -77,9 +90,15 @@ namespace FimDelta
 			view.Source = deltaViewController.View;
 		}
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
 		private void Button_Click(object sender, RoutedEventArgs e)
 		{
-			string outFile = Environment.GetCommandLineArgs()[1].Replace(".xml", "2.xml");
+			// Possible to expand implementation with messagebox asking how to name new changes file.
+			string outFile = changesFile.Replace(".xml", "2.xml");
 			if (Environment.GetCommandLineArgs().Length > 2)
 			{
 				outFile = Environment.GetCommandLineArgs()[2];
